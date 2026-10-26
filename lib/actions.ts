@@ -130,6 +130,23 @@ export async function removeStudent(studentId: string) {
   revalidatePath("/professor", "layout");
 }
 
+/** Corrige o nome do aluno sem mexer no código de acesso nem no progresso. */
+export async function renameStudent(studentId: string, rawName: string): Promise<FormState> {
+  const name = rawName.trim().replace(/\s+/g, " ");
+  if (!name) return { error: "O nome não pode ficar vazio." };
+  if (name.length > MAX_NAME) return { error: `O nome pode ter até ${MAX_NAME} caracteres.` };
+
+  const owned = db.select({ id: classes.id }).from(classes).where(eq(classes.teacherId, (await requireTeacher()).id));
+  const [updated] = await db
+    .update(students)
+    .set({ name })
+    .where(and(eq(students.id, studentId), inArray(students.classId, owned)))
+    .returning({ id: students.id });
+  if (!updated) return { error: "Aluno não encontrado." };
+  revalidatePath("/professor", "layout");
+  return { success: `Nome alterado para ${name}.` };
+}
+
 export async function answerQuestion(questionId: string, answer: number) {
   const student = await requireStudent();
   const found = QUESTIONS.get(questionId);

@@ -1,14 +1,24 @@
 "use client";
 
-import { LoaderCircle, RefreshCw, Trash2 } from "lucide-react";
+import { LoaderCircle, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { newStudentCode, removeStudent } from "@/lib/actions";
+import { newStudentCode, removeStudent, renameStudent } from "@/lib/actions";
 import { formatAccessCode } from "@/lib/access-code";
 
 export function StudentActions({ studentId, name }: { studentId: string; name: string }) {
   const [pending, startTransition] = useTransition();
+
+  function rename() {
+    const newName = prompt(`Novo nome para ${name}:`, name);
+    if (newName === null || newName.trim() === name) return;
+    startTransition(async () => {
+      const result = await renameStudent(studentId, newName);
+      if (result?.error) toast.error(result.error);
+      else toast.success(result?.success);
+    });
+  }
 
   function regenerate() {
     if (!confirm(`Gerar um código novo para ${name}? O código atual para de funcionar.`)) return;
@@ -40,6 +50,9 @@ export function StudentActions({ studentId, name }: { studentId: string; name: s
         <LoaderCircle className="m-2 size-4 animate-spin text-muted-foreground" aria-label="Aguarde" />
       ) : (
         <>
+          <Button variant="ghost" size="icon-sm" onClick={rename} aria-label={`Editar nome de ${name}`} title="Editar nome">
+            <Pencil aria-hidden />
+          </Button>
           <Button variant="ghost" size="icon-sm" onClick={regenerate} aria-label={`Gerar novo código para ${name}`} title="Gerar novo código">
             <RefreshCw aria-hidden />
           </Button>
