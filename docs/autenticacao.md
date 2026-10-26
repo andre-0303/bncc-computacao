@@ -51,6 +51,7 @@ Em caso de erro, o formulário mantém o que foi digitado (veja [Formulários](#
 Na linha de cada aluno, no painel da turma:
 
 - **Gerar novo código** (`newStudentCode`): troca o código do aluno. O código antigo para de funcionar na hora, e **todas as sessões abertas do aluno são apagadas**, então quem estava logado com o código antigo é desconectado. O novo código aparece numa notificação na tela do professor e também na tabela. O progresso é mantido. Use quando um código vazar ou for perdido.
+- **Editar nome** (`renameStudent`): só troca o nome; o código de acesso e o progresso não mudam.
 - **Remover** (`removeStudent`): depois de uma confirmação, apaga o aluno, as sessões, as tentativas e as lições concluídas dele (por `ON DELETE CASCADE`). Não há como desfazer.
 
 As duas actions só agem sobre alunos de turmas do professor logado.

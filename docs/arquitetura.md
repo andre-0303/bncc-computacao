@@ -45,6 +45,7 @@ Todas ficam em `lib/actions.ts`:
 | `createClass` | professor | cria uma turma (só o nome) |
 | `addStudents` | professor | cadastra alunos numa turma, um nome por linha, e gera o código de cada um |
 | `newStudentCode` | professor | troca o código de um aluno e derruba as sessões abertas dele |
+| `renameStudent` | professor | corrige o nome do aluno, sem mudar código nem progresso |
 | `removeStudent` | professor | apaga um aluno e todo o progresso dele |
 | `answerQuestion` | aluno | corrige uma resposta, grava a tentativa e atualiza a conclusão da lição |
 

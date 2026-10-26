@@ -55,9 +55,10 @@ Se você remover ou trocar questões do conteúdo, as respostas antigas a elas d
 Na linha de cada aluno há dois botões:
 
 - **Gerar novo código** (ícone de setas): use quando o código vazar ou quando o aluno perder o cartão e você preferir trocar. O código antigo para de funcionar na hora, e quem estiver usando o código antigo é desconectado. O novo código aparece na sua tela e na tabela; entregue ao aluno em particular. O progresso dele não se perde.
+- **Editar nome** (ícone de lápis): corrige o nome. O código e o progresso continuam iguais.
 - **Remover** (ícone de lixeira): tira o aluno da turma. Antes, o sistema pede confirmação. **Todo o progresso do aluno é apagado** e não há como desfazer.
 
-Para corrigir o nome de um aluno, hoje é preciso removê-lo e cadastrá-lo de novo, o que apaga o progresso. Se ele já começou as lições, deixe o nome como está.
+Para corrigir o nome de um aluno, use o botão de lápis ao lado dele. O código de acesso e o progresso continuam os mesmos.
 
 ## Observações importantes
 
