@@ -50,6 +50,9 @@ export const QUESTIONS = new Map(
   ),
 );
 
+/** Acertos mínimos para a lição contar como concluída (60%). */
+export const passingScore = (total: number) => Math.ceil(total * 0.6);
+
 export const isCorrect = (q: Question, answer: number) => answer === q.answer;
 
 export const correctAnswerText = (q: Question) => q.options[q.answer];
