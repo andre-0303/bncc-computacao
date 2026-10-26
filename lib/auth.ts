@@ -1,31 +1,19 @@
 import "server-only";
-import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
-import { promisify } from "node:util";
-import { and, eq, gt } from "drizzle-orm";
+import { randomBytes } from "node:crypto";
+import { and, eq, gt, lt } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { classes, db, sessions, students, teachers } from "@/lib/db";
 
-const scryptAsync = promisify(scrypt) as (pw: string, salt: string, len: number) => Promise<Buffer>;
 const COOKIE = "session";
 const SESSION_DAYS = 30;
-
-export async function hashSecret(secret: string) {
-  const salt = randomBytes(16).toString("hex");
-  const hash = await scryptAsync(secret, salt, 64);
-  return `${salt}:${hash.toString("hex")}`;
-}
-
-export async function verifySecret(secret: string, stored: string) {
-  const [salt, hex] = stored.split(":");
-  const hash = await scryptAsync(secret, salt, 64);
-  return timingSafeEqual(hash, Buffer.from(hex, "hex"));
-}
 
 export async function createSession(owner: { teacherId: string } | { studentId: string }) {
   const token = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 86_400_000);
+  // Limpeza das sessões vencidas a cada login: mantém a tabela pequena sem precisar de cron.
+  await db.delete(sessions).where(lt(sessions.expiresAt, new Date()));
   await db.insert(sessions).values({ token, expiresAt, ...owner });
   (await cookies()).set(COOKIE, token, {
     httpOnly: true,
@@ -57,7 +45,7 @@ export const getStudent = cache(async () => {
   const session = await getSession();
   if (!session?.studentId) return null;
   const [row] = await db
-    .select({ id: students.id, nickname: students.nickname, className: classes.name })
+    .select({ id: students.id, name: students.name, className: classes.name })
     .from(students)
     .innerJoin(classes, eq(classes.id, students.classId))
     .where(eq(students.id, session.studentId));

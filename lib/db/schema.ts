@@ -1,4 +1,3 @@
-import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -7,7 +6,6 @@ import {
   primaryKey,
   text,
   timestamp,
-  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -25,25 +23,19 @@ export const classes = pgTable("classes", {
     .notNull()
     .references(() => teachers.id, { onDelete: "cascade" }),
   name: text().notNull(),
-  code: text().notNull().unique(),
   createdAt: timestamp().notNull().defaultNow(),
 });
 
-export const students = pgTable(
-  "students",
-  {
-    id: uuid().primaryKey().defaultRandom(),
-    classId: uuid()
-      .notNull()
-      .references(() => classes.id, { onDelete: "cascade" }),
-    nickname: text().notNull(),
-    // null = PIN resetado pelo professor; o próximo login define um novo
-    pinHash: text(),
-    failedLogins: integer().notNull().default(0),
-    createdAt: timestamp().notNull().defaultNow(),
-  },
-  (t) => [uniqueIndex("students_class_nickname_idx").on(t.classId, sql`lower(${t.nickname})`)],
-);
+/** Alunos são cadastrados pelo professor; entram só com o código de acesso pessoal. */
+export const students = pgTable("students", {
+  id: uuid().primaryKey().defaultRandom(),
+  classId: uuid()
+    .notNull()
+    .references(() => classes.id, { onDelete: "cascade" }),
+  name: text().notNull(),
+  accessCode: text().notNull().unique(),
+  createdAt: timestamp().notNull().defaultNow(),
+});
 
 export const sessions = pgTable("sessions", {
   token: text().primaryKey(),

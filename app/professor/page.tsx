@@ -1,46 +1,56 @@
-import { desc, eq } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { CreateClassForm } from "@/components/create-class-form";
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { logout } from "@/lib/actions";
+import { CreateClassForm } from "@/components/professor/create-class-form";
+import { TeacherHeader } from "@/components/professor/teacher-header";
 import { requireTeacher } from "@/lib/auth";
-import { classes, db } from "@/lib/db";
+import { classes, db, students } from "@/lib/db";
 
 export default async function TeacherHome() {
   const teacher = await requireTeacher();
   const list = await db
-    .select()
+    .select({ id: classes.id, name: classes.name, students: count(students.id) })
     .from(classes)
+    .leftJoin(students, eq(students.classId, classes.id))
     .where(eq(classes.teacherId, teacher.id))
+    .groupBy(classes.id)
     .orderBy(desc(classes.createdAt));
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Olá, {teacher.name}</h1>
-        <form action={logout}>
-          <Button type="submit" variant="ghost" size="sm">
-            Sair
-          </Button>
-        </form>
-      </div>
-      <CreateClassForm />
-      <div className="grid gap-3">
-        {list.map((c) => (
-          <Link key={c.id} href={`/professor/turma/${c.id}`}>
-            <Card className="transition-colors hover:bg-muted/50">
-              <CardHeader className="flex-row items-center justify-between">
-                <CardTitle>{c.name}</CardTitle>
-                <CardDescription>
-                  Código: <span className="font-mono text-base font-semibold tracking-widest text-foreground">{c.code}</span>
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </Link>
-        ))}
-        {!list.length && <p className="text-muted-foreground">Crie sua primeira turma e passe o código para os alunos.</p>}
-      </div>
-    </main>
+    <>
+      <TeacherHeader name={teacher.name} />
+      <main className="mx-auto w-full max-w-3xl flex-1 space-y-10 px-4 py-10">
+        <h1 className="text-3xl font-extrabold tracking-tight">Suas turmas</h1>
+        <CreateClassForm />
+        {list.length ? (
+          <ul className="divide-y overflow-hidden rounded-2xl border bg-white">
+            {list.map((c) => (
+              <li key={c.id}>
+                <Link
+                  href={`/professor/turma/${c.id}`}
+                  className="group flex items-center gap-3 p-4 transition-colors hover:bg-secondary/50"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-lg font-bold">{c.name}</span>
+                    <span className="block text-sm text-muted-foreground">
+                      {c.students === 0 ? "Nenhum aluno ainda" : c.students === 1 ? "1 aluno" : `${c.students} alunos`}
+                    </span>
+                  </span>
+                  <ChevronRight
+                    className="size-5 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                    aria-hidden
+                  />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="max-w-[50ch] text-muted-foreground">
+            Crie sua primeira turma e depois cadastre os alunos. Cada aluno recebe um código de acesso pessoal para
+            entrar, sem e-mail nem senha.
+          </p>
+        )}
+      </main>
+    </>
   );
 }

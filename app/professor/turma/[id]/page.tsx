@@ -1,11 +1,15 @@
 import { and, eq } from "drizzle-orm";
+import { Printer, TriangleAlert } from "lucide-react";
 import Link from "next/link";
+import { BackLink } from "@/components/back-link";
 import { notFound } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LINE } from "@/components/metro";
+import { AddStudentsForm } from "@/components/professor/add-students-form";
+import { StudentActions } from "@/components/professor/student-actions";
+import { TeacherHeader } from "@/components/professor/teacher-header";
+import { buttonVariants } from "@/components/ui/button";
 import { SKILLS } from "@/content";
-import { resetStudentPin } from "@/lib/actions";
+import { formatAccessCode } from "@/lib/access-code";
 import { requireTeacher } from "@/lib/auth";
 import { classes, db } from "@/lib/db";
 import { classReport } from "@/lib/queries";
@@ -16,6 +20,14 @@ const pct = (hits: number, total: number) => (total ? Math.round((hits / total) 
 function tally(rows: { skillCode: string; correct: boolean }[], skillCode: string) {
   const answered = rows.filter((r) => r.skillCode === skillCode);
   return pct(answered.filter((r) => r.correct).length, answered.length);
+}
+
+/** Faixas do mapa de calor: abaixo de 50% pede atenção, 75% ou mais está bem. */
+function heat(accuracy: number | null) {
+  if (accuracy === null) return "bg-muted/60 text-muted-foreground";
+  if (accuracy < 50) return "bg-bad-soft text-[#8f1d22]";
+  if (accuracy < 75) return "bg-warn-soft text-[#6b5000]";
+  return "bg-ok-soft text-[#0f4d2c]";
 }
 
 export default async function ClassPage({ params }: PageProps<"/professor/turma/[id]">) {
@@ -29,108 +41,159 @@ export default async function ClassPage({ params }: PageProps<"/professor/turma/
 
   const { roster, completions, latest } = await classReport(klass.id);
 
-  const classAccuracy = SKILLS.map((s) => ({ code: s.code, accuracy: tally(latest, s.code) }));
+  const classAccuracy = SKILLS.map((s) => ({ skill: s, accuracy: tally(latest, s.code) }));
   const weakest = classAccuracy
     .filter((s) => s.accuracy !== null)
     .sort((a, b) => a.accuracy! - b.accuracy!)[0];
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 space-y-6 px-4 py-8">
-      <Link href="/professor" className="text-sm text-muted-foreground hover:underline">
-        ← Turmas
-      </Link>
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{klass.name}</h1>
-        <p className="text-muted-foreground">
-          Código: <span className="font-mono text-lg font-semibold tracking-widest text-foreground">{klass.code}</span>
-        </p>
-      </div>
-
-      {weakest && (
-        <p className="rounded-lg border border-amber-500/40 bg-amber-50 p-3 text-sm text-amber-950">
-          Habilidade com mais erros na turma: <strong>{weakest.code}</strong> (
-          {SKILLS.find((s) => s.code === weakest.code)!.title}), {weakest.accuracy}% de acerto. Vale retomar em aula.
-        </p>
-      )}
-
-      {roster.length ? (
-        <div className="rounded-xl border bg-background">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Aluno</TableHead>
-                {SKILLS.map((s) => (
-                  <TableHead key={s.code} title={s.title} className="text-center font-mono text-xs">
-                    {s.code.slice(4)}
-                  </TableHead>
-                ))}
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {roster.map((student) => {
-                const mine = latest.filter((r) => r.studentId === student.id);
-                const done = new Set(completions.filter((c) => c.studentId === student.id).map((c) => c.lessonId));
-                return (
-                  <TableRow key={student.id}>
-                    <TableCell className="font-medium">
-                      {student.nickname}
-                      {student.locked >= 5 && (
-                        <Badge variant="destructive" className="ml-2">
-                          bloqueado
-                        </Badge>
-                      )}
-                    </TableCell>
-                    {SKILLS.map((s) => {
-                      const accuracy = tally(mine, s.code);
-                      const lessons = s.lessons.filter((l) => done.has(l.id)).length;
-                      return (
-                        <TableCell key={s.code} className="text-center text-xs">
-                          <div>
-                            {lessons}/{s.lessons.length}
-                          </div>
-                          <div
-                            className={cn(
-                              "text-muted-foreground",
-                              accuracy !== null && accuracy < 60 && "font-semibold text-red-700",
-                            )}
-                          >
-                            {accuracy === null ? "–" : `${accuracy}%`}
-                          </div>
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell>
-                      <form action={resetStudentPin.bind(null, student.id)}>
-                        <Button type="submit" variant="outline" size="sm">
-                          Resetar PIN
-                        </Button>
-                      </form>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              <TableRow className="bg-muted/50 font-medium">
-                <TableCell>Turma</TableCell>
-                {classAccuracy.map((s) => (
-                  <TableCell key={s.code} className="text-center text-xs">
-                    {s.accuracy === null ? "–" : `${s.accuracy}%`}
-                  </TableCell>
-                ))}
-                <TableCell />
-              </TableRow>
-            </TableBody>
-          </Table>
+    <>
+      <TeacherHeader name={teacher.name} />
+      <main className="mx-auto w-full max-w-6xl flex-1 space-y-8 px-4 py-8">
+        <BackLink href="/professor">Turmas</BackLink>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight">{klass.name}</h1>
+            <p className="text-muted-foreground">
+              {roster.length === 1 ? "1 aluno" : `${roster.length} alunos`}
+            </p>
+          </div>
+          {roster.length > 0 && (
+            <Link
+              href={`/professor/turma/${klass.id}/cartoes`}
+              className={buttonVariants({ variant: "outline", size: "lg", className: "h-11 px-5" })}
+            >
+              <Printer aria-hidden />
+              Imprimir códigos de acesso
+            </Link>
+          )}
         </div>
-      ) : (
-        <p className="text-muted-foreground">
-          Nenhum aluno ainda. Peça para acessarem o site, tocarem em &quot;Sou aluno&quot; e usarem o código {klass.code}.
-        </p>
-      )}
-      <p className="text-xs text-muted-foreground">
-        Cada célula: lições concluídas / total e % de acerto (última tentativa de cada questão). Colunas = EF09CO01 a
-        EF09CO10; passe o mouse no cabeçalho para ver o nome. Resetar PIN: o aluno define um novo no próximo acesso.
-      </p>
-    </main>
+
+        {weakest && weakest.accuracy! < 75 && (
+          <div className="flex items-start gap-3 rounded-xl border-2 border-ink bg-warn p-4 text-ink shadow-[4px_4px_0_var(--ink)]">
+            <TriangleAlert className="mt-0.5 size-6 shrink-0" aria-hidden />
+            <p>
+              <strong>Vale retomar em aula: {weakest.skill.title}</strong> ({weakest.skill.code}). É a habilidade com
+              menos acertos da turma, {weakest.accuracy}%.
+            </p>
+          </div>
+        )}
+
+        {roster.length ? (
+          <div className="overflow-x-auto rounded-2xl border bg-white">
+            <table className="w-full min-w-[900px] table-fixed border-separate border-spacing-1 p-2 text-sm">
+              <thead>
+                <tr>
+                  <th scope="col" className="sticky left-0 z-10 w-32 bg-white px-2 pb-2 text-left align-bottom font-bold">
+                    Aluno
+                  </th>
+                  {SKILLS.map((s) => (
+                    <th key={s.code} scope="col" title={`${s.code}: ${s.title}`} className="px-1 pb-2 align-top font-bold">
+                      <span className="mx-auto mb-1.5 block h-1.5 w-8 rounded-full" style={{ background: LINE[s.axis] }} aria-hidden />
+                      {s.code.slice(-2)}
+                      <span className="mt-0.5 line-clamp-2 block text-[11px] leading-tight font-semibold text-muted-foreground">
+                        <span className="sr-only">: </span>
+                        {s.title}
+                      </span>
+                    </th>
+                  ))}
+                  <th scope="col" className="w-32">
+                    <span className="sr-only">Ações</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {roster.map((student) => {
+                  const mine = latest.filter((r) => r.studentId === student.id);
+                  const done = new Set(completions.filter((c) => c.studentId === student.id).map((c) => c.lessonId));
+                  return (
+                    <tr key={student.id}>
+                      <th scope="row" className="sticky left-0 z-10 bg-white px-2 text-left text-base font-semibold">
+                        <span className="block truncate" title={student.name}>
+                          {student.name}
+                        </span>
+                        <span className="block font-mono text-xs font-normal tracking-wider text-muted-foreground">
+                          <span className="sr-only">Código de acesso: </span>
+                          {formatAccessCode(student.accessCode)}
+                        </span>
+                      </th>
+                      {SKILLS.map((s) => {
+                        const accuracy = tally(mine, s.code);
+                        const lessons = s.lessons.filter((l) => done.has(l.id)).length;
+                        return (
+                          <td key={s.code} className={cn("rounded-lg px-1 py-2 text-center tabular-nums", heat(accuracy))}>
+                            <span className="block text-base font-extrabold">{accuracy === null ? "–" : `${accuracy}%`}</span>
+                            <span className="block text-xs opacity-75">
+                              {lessons}/{s.lessons.length} lições
+                            </span>
+                          </td>
+                        );
+                      })}
+                      <td className="pl-2 text-right">
+                        <StudentActions studentId={student.id} name={student.name} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row" className="sticky left-0 z-10 bg-white px-2 pt-2 text-left text-base font-bold">
+                    Turma
+                  </th>
+                  {classAccuracy.map(({ skill, accuracy }) => (
+                    <td
+                      key={skill.code}
+                      className={cn(
+                        "rounded-lg px-1 py-2 text-center text-base font-extrabold tabular-nums",
+                        heat(accuracy),
+                        skill === weakest?.skill && "ring-2 ring-ink",
+                      )}
+                    >
+                      {accuracy === null ? "–" : `${accuracy}%`}
+                    </td>
+                  ))}
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        ) : (
+          <div className="max-w-[60ch] space-y-2 rounded-2xl border bg-white p-6">
+            <h2 className="text-xl font-extrabold">Nenhum aluno cadastrado</h2>
+            <p className="text-muted-foreground">
+              Cadastre os alunos abaixo. Cada um recebe um código de acesso pessoal, que você imprime e entrega. Eles
+              entram no site com esse código, sem senha nem e-mail.
+            </p>
+          </div>
+        )}
+
+        {roster.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            <span>% de acerto na última tentativa de cada questão:</span>
+            {[
+              ["bg-bad-soft", "abaixo de 50%"],
+              ["bg-warn-soft", "50 a 74%"],
+              ["bg-ok-soft", "75% ou mais"],
+              ["bg-muted", "ainda não respondeu"],
+            ].map(([cls, label]) => (
+              <span key={label} className="flex items-center gap-1.5">
+                <span className={cn("size-3.5 rounded", cls)} aria-hidden />
+                {label}
+              </span>
+            ))}
+          </div>
+        )}
+        <section className="rounded-2xl border bg-white p-6">
+          <AddStudentsForm classId={klass.id} />
+        </section>
+        {roster.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            O código de acesso fica embaixo do nome. Se um código vazar, use o botão de gerar novo: o antigo para de
+            funcionar na hora.
+          </p>
+        )}
+      </main>
+    </>
   );
 }

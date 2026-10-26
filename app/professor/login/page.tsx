@@ -1,59 +1,53 @@
 "use client";
 
+import { LoaderCircle } from "lucide-react";
+import Link from "next/link";
 import { useActionState } from "react";
+import { BrandMark } from "@/components/brand";
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { teacherLogin, teacherSignup } from "@/lib/actions";
+import { teacherLogin } from "@/lib/actions";
 
 export default function TeacherLoginPage() {
-  const [loginState, loginAction, loggingIn] = useActionState(teacherLogin, undefined);
-  const [signupState, signupAction, signingUp] = useActionState(teacherSignup, undefined);
+  const [state, action, pending] = useActionState(teacherLogin, undefined);
 
   return (
-    <main className="mx-auto grid w-full max-w-3xl flex-1 content-center gap-4 px-4 py-12 md:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Entrar</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={loginAction} className="grid gap-4">
-            <Field id="login-email" name="email" label="E-mail" type="email" autoComplete="email" />
-            <Field id="login-password" name="password" label="Senha" type="password" autoComplete="current-password" />
-            <FormError error={loginState?.error} />
-            <Button type="submit" size="lg" disabled={loggingIn}>
-              Entrar
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Criar conta de professor</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={signupAction} className="grid gap-4">
-            <Field id="name" name="name" label="Nome" autoComplete="name" />
-            <Field id="email" name="email" label="E-mail" type="email" autoComplete="email" />
-            <Field id="password" name="password" label="Senha (mín. 8)" type="password" minLength={8} autoComplete="new-password" />
-            <FormError error={signupState?.error} />
-            <Button type="submit" size="lg" variant="outline" disabled={signingUp}>
-              Criar conta
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-8 px-4 py-12">
+      <Link href="/" aria-label="Início" className="w-fit rounded-md">
+        <BrandMark className="size-10" />
+      </Link>
+      <div className="space-y-2">
+        <h1 className="text-3xl font-extrabold tracking-tight">Área do professor</h1>
+        <p className="text-muted-foreground">Cadastre suas turmas e acompanhe em quais habilidades a turma mais erra.</p>
+      </div>
+
+      <form action={action} className="grid gap-5">
+        <div className="grid gap-2">
+          <Label htmlFor="email">E-mail</Label>
+          <Input id="email" name="email" type="email" defaultValue={state?.fields?.email} required autoComplete="email" className="h-12 bg-white text-base" />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="password">Senha</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            required
+            autoComplete="current-password"
+            className="h-12 bg-white text-base"
+          />
+        </div>
+        <FormError error={state?.error} />
+        <Button type="submit" size="lg" className="h-12 text-base" disabled={pending}>
+          {pending && <LoaderCircle className="animate-spin" aria-hidden />}
+          Entrar
+        </Button>
+      </form>
+      <p className="text-sm text-muted-foreground">
+        Ainda não tem acesso? Peça a conta para quem administra o sistema na sua escola.
+      </p>
     </main>
-  );
-}
-
-function Field({ label, ...props }: React.ComponentProps<"input"> & { label: string }) {
-  return (
-    <div className="grid gap-1.5">
-      <Label htmlFor={props.id}>{label}</Label>
-      <Input required className="h-10" {...props} />
-    </div>
   );
 }

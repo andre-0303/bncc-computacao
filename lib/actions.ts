@@ -1,88 +1,36 @@
 "use server";
 
-import { randomInt } from "node:crypto";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { correctAnswerText, isCorrect, QUESTIONS } from "@/content";
-import {
-  createSession,
-  destroySession,
-  hashSecret,
-  requireStudent,
-  requireTeacher,
-  verifySecret,
-} from "@/lib/auth";
-import { attempts, classes, db, lessonCompletions, students, teachers } from "@/lib/db";
+import { correctAnswerText, isCorrect, passingScore, QUESTIONS } from "@/content";
+import type { Lesson } from "@/content/types";
+import { createSession, destroySession, requireStudent, requireTeacher } from "@/lib/auth";
+import { attempts, classes, db, lessonCompletions, sessions, students, teachers } from "@/lib/db";
+import { normalizeAccessCode } from "@/lib/access-code";
+import { newAccessCode, verifySecret } from "@/lib/secrets";
 
-export type FormState = { error?: string } | undefined;
+/**
+ * `success` vira toast no cliente. `fields` devolve o que foi digitado: o React limpa o
+ * formulário depois da action, e ninguém quer redigitar o e-mail por causa de uma senha errada.
+ */
+export type FormState = { error?: string; success?: string; fields?: Record<string, string> } | undefined;
 
-const MAX_FAILED_LOGINS = 5;
-
+// ponytail: sem limite de tentativas por IP no login do aluno; o código de 8 caracteres
+// (~1 trilhão de combinações) torna adivinhar inviável. Adicionar se o sistema for exposto em escala.
 export async function studentLogin(_: FormState, form: FormData): Promise<FormState> {
-  const code = String(form.get("code") ?? "").trim().toUpperCase();
-  const nickname = String(form.get("nickname") ?? "").trim();
-  const pin = String(form.get("pin") ?? "");
+  const code = normalizeAccessCode(String(form.get("code") ?? ""));
+  const fields = { code: String(form.get("code") ?? "") };
+  if (code.length !== 8) return { error: "O código tem 8 letras e números, como K7XQ-2MPA.", fields };
 
-  if (nickname.length < 2 || nickname.length > 20) return { error: "O apelido precisa ter de 2 a 20 letras." };
-  if (!/^\d{4}$/.test(pin)) return { error: "O PIN precisa ter 4 números." };
+  const [student] = await db.select({ id: students.id }).from(students).where(eq(students.accessCode, code));
+  if (!student) return { error: "Código não encontrado. Confira com seu professor.", fields };
 
-  const [klass] = await db.select().from(classes).where(eq(classes.code, code));
-  if (!klass) return { error: "Turma não encontrada. Confira o código com seu professor." };
-
-  const [student] = await db
-    .select()
-    .from(students)
-    .where(and(eq(students.classId, klass.id), eq(sql`lower(${students.nickname})`, nickname.toLowerCase())));
-
-  if (!student) {
-    const [created] = await db
-      .insert(students)
-      .values({ classId: klass.id, nickname, pinHash: await hashSecret(pin) })
-      .returning({ id: students.id });
-    await createSession({ studentId: created.id });
-    redirect("/aluno");
-  }
-
-  if (student.failedLogins >= MAX_FAILED_LOGINS)
-    return { error: "Acesso bloqueado por muitas tentativas. Peça ao professor para resetar seu PIN." };
-
-  if (student.pinHash && !(await verifySecret(pin, student.pinHash))) {
-    await db
-      .update(students)
-      .set({ failedLogins: student.failedLogins + 1 })
-      .where(eq(students.id, student.id));
-    return { error: "PIN incorreto. Se esse apelido não é seu, escolha outro." };
-  }
-
-  // PIN nulo = resetado pelo professor: o PIN digitado agora vira o novo.
-  await db
-    .update(students)
-    .set({ failedLogins: 0, pinHash: student.pinHash ?? (await hashSecret(pin)) })
-    .where(eq(students.id, student.id));
   await createSession({ studentId: student.id });
   redirect("/aluno");
 }
 
-export async function teacherSignup(_: FormState, form: FormData): Promise<FormState> {
-  const name = String(form.get("name") ?? "").trim();
-  const email = String(form.get("email") ?? "").trim().toLowerCase();
-  const password = String(form.get("password") ?? "");
-
-  if (!name || !email.includes("@")) return { error: "Preencha nome e e-mail." };
-  if (password.length < 8) return { error: "A senha precisa ter pelo menos 8 caracteres." };
-
-  const [created] = await db
-    .insert(teachers)
-    .values({ name, email, passwordHash: await hashSecret(password) })
-    .onConflictDoNothing()
-    .returning({ id: teachers.id });
-  if (!created) return { error: "Já existe uma conta com esse e-mail." };
-
-  await createSession({ teacherId: created.id });
-  redirect("/professor");
-}
-
+// Professores são criados direto no banco (pnpm teacher:create), não pela interface.
 // ponytail: sem limite de tentativas no login do professor; adicionar se virar alvo
 export async function teacherLogin(_: FormState, form: FormData): Promise<FormState> {
   const email = String(form.get("email") ?? "").trim().toLowerCase();
@@ -90,7 +38,7 @@ export async function teacherLogin(_: FormState, form: FormData): Promise<FormSt
 
   const [teacher] = await db.select().from(teachers).where(eq(teachers.email, email));
   if (!teacher || !(await verifySecret(password, teacher.passwordHash)))
-    return { error: "E-mail ou senha incorretos." };
+    return { error: "E-mail ou senha incorretos.", fields: { email } };
 
   await createSession({ teacherId: teacher.id });
   redirect("/professor");
@@ -101,40 +49,85 @@ export async function logout() {
   redirect("/");
 }
 
-// Sem 0/O/1/I para não confundir na hora de copiar do quadro.
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
 export async function createClass(_: FormState, form: FormData): Promise<FormState> {
   const teacher = await requireTeacher();
   const name = String(form.get("name") ?? "").trim();
   if (!name) return { error: "Dê um nome para a turma (ex.: 9º ano A)." };
 
-  for (let i = 0; i < 5; i++) {
-    const code = Array.from({ length: 6 }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join("");
-    const [created] = await db
-      .insert(classes)
-      .values({ teacherId: teacher.id, name, code })
-      .onConflictDoNothing()
-      .returning();
-    if (created) {
-      revalidatePath("/professor");
-      return;
-    }
-  }
-  return { error: "Não foi possível gerar o código. Tente de novo." };
+  await db.insert(classes).values({ teacherId: teacher.id, name });
+  revalidatePath("/professor");
+  return { success: `Turma ${name} criada. Agora cadastre os alunos.` };
 }
 
-export async function resetStudentPin(studentId: string) {
+/** Turmas do professor logado, para checar posse antes de mexer em alunos. */
+async function ownedClassIds() {
   const teacher = await requireTeacher();
-  const owned = db
-    .select({ id: classes.id })
-    .from(classes)
-    .where(eq(classes.teacherId, teacher.id));
-  await db
-    .update(students)
-    .set({ pinHash: null, failedLogins: 0 })
-    .where(and(eq(students.id, studentId), inArray(students.classId, owned)));
-  revalidatePath("/professor/turma/[id]", "page");
+  return db.select({ id: classes.id }).from(classes).where(eq(classes.teacherId, teacher.id));
+}
+
+const MAX_NAME = 60;
+const MAX_PER_SUBMIT = 60;
+
+/** Cadastra alunos (um nome por linha) e gera o código de acesso de cada um. */
+export async function addStudents(classId: string, _: FormState, form: FormData): Promise<FormState> {
+  const owned = await ownedClassIds();
+  if (!owned.some((c) => c.id === classId)) return { error: "Turma não encontrada." };
+
+  const names = String(form.get("names") ?? "")
+    .split("\n")
+    .map((n) => n.trim().replace(/\s+/g, " "))
+    .filter(Boolean);
+  if (!names.length) return { error: "Escreva pelo menos um nome, um por linha." };
+  if (names.length > MAX_PER_SUBMIT) return { error: `Cadastre no máximo ${MAX_PER_SUBMIT} alunos por vez.` };
+  if (names.some((n) => n.length > MAX_NAME)) return { error: `Cada nome pode ter até ${MAX_NAME} caracteres.` };
+
+  // Colisão de código é rarísima; se acontecer, só os que falharam ganham código novo.
+  let pending = names;
+  for (let i = 0; i < 3 && pending.length; i++) {
+    const inserted = await db
+      .insert(students)
+      .values(pending.map((name) => ({ classId, name, accessCode: newAccessCode() })))
+      .onConflictDoNothing()
+      .returning({ name: students.name });
+    const done = inserted.map((r) => r.name);
+    pending = pending.filter((n) => {
+      const k = done.indexOf(n);
+      if (k < 0) return true;
+      done.splice(k, 1);
+      return false;
+    });
+  }
+  if (pending.length) return { error: "Não foi possível gerar alguns códigos. Tente de novo." };
+
+  revalidatePath("/professor", "layout");
+  return { success: names.length === 1 ? `${names[0]} cadastrado.` : `${names.length} alunos cadastrados.` };
+}
+
+/** Troca o código do aluno (ex.: vazou). O código antigo para de funcionar e as sessões abertas caem. */
+export async function newStudentCode(studentId: string) {
+  const owned = db.select({ id: classes.id }).from(classes).where(eq(classes.teacherId, (await requireTeacher()).id));
+  for (let i = 0; i < 3; i++) {
+    const code = newAccessCode();
+    const [updated] = await db
+      .update(students)
+      .set({ accessCode: code })
+      .where(and(eq(students.id, studentId), inArray(students.classId, owned)))
+      .returning({ id: students.id })
+      .catch(() => []); // colisão de código único: tenta outro
+    if (updated) {
+      await db.delete(sessions).where(eq(sessions.studentId, studentId));
+      revalidatePath("/professor", "layout");
+      return code;
+    }
+  }
+  throw new Error("Não foi possível gerar o código");
+}
+
+/** Remove o aluno e todo o progresso dele. */
+export async function removeStudent(studentId: string) {
+  const owned = db.select({ id: classes.id }).from(classes).where(eq(classes.teacherId, (await requireTeacher()).id));
+  await db.delete(students).where(and(eq(students.id, studentId), inArray(students.classId, owned)));
+  revalidatePath("/professor", "layout");
 }
 
 export async function answerQuestion(questionId: string, answer: number) {
@@ -151,25 +144,40 @@ export async function answerQuestion(questionId: string, answer: number) {
     questionId,
     correct,
   });
-  return { correct, correctAnswer: correctAnswerText(question), why: question.why };
+  return {
+    correct,
+    correctAnswer: correctAnswerText(question),
+    why: question.why,
+    lesson: await updateCompletion(student.id, lesson),
+  };
 }
 
-export async function completeLesson(lessonId: string) {
-  const student = await requireStudent();
+/**
+ * Recalcula a lição pela última tentativa de cada questão dela. Conclui quando todas foram
+ * respondidas e os acertos chegam a 60%; vale também para acertos feitos na revisão.
+ * Uma lição concluída nunca "desconclui", e guarda a melhor nota.
+ */
+async function updateCompletion(studentId: string, lesson: Lesson) {
+  const ids = lesson.questions.map((q) => q.id);
   const latest = await db
     .selectDistinctOn([attempts.questionId], { correct: attempts.correct })
     .from(attempts)
-    .where(and(eq(attempts.studentId, student.id), eq(attempts.lessonId, lessonId)))
+    .where(and(eq(attempts.studentId, studentId), inArray(attempts.questionId, ids)))
     .orderBy(attempts.questionId, desc(attempts.createdAt));
-  const score = latest.filter((a) => a.correct).length;
 
-  await db
-    .insert(lessonCompletions)
-    .values({ studentId: student.id, lessonId, score })
-    .onConflictDoUpdate({
-      target: [lessonCompletions.studentId, lessonCompletions.lessonId],
-      set: { score, completedAt: new Date() },
-    });
-  revalidatePath("/aluno", "layout");
-  return score;
+  const total = ids.length;
+  const score = latest.filter((a) => a.correct).length;
+  const passed = latest.length === total && score >= passingScore(total);
+  if (passed) {
+    await db
+      .insert(lessonCompletions)
+      .values({ studentId, lessonId: lesson.id, score })
+      .onConflictDoUpdate({
+        target: [lessonCompletions.studentId, lessonCompletions.lessonId],
+        set: { score: sql`greatest(${lessonCompletions.score}, excluded.score)`, completedAt: new Date() },
+      });
+    // Sem revalidatePath: re-renderizar a rota no meio do quiz desmontaria a revisão.
+    // As páginas do aluno são dinâmicas e já buscam dados novos a cada navegação.
+  }
+  return { score, total, passed, needed: passingScore(total) };
 }
