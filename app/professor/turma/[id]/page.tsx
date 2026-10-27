@@ -48,9 +48,9 @@ export default async function ClassPage({ params }: PageProps<"/professor/turma/
   const teacher = await requireTeacher();
   const klass = await ownedClass(id);
 
-  const { roster, completions, latest } = await classReport(klass.id);
+  const { roster, completions, firstTry } = await classReport(klass.id);
 
-  const classAccuracy = SKILLS.map((s) => ({ skill: s, accuracy: tally(latest, s.code) }));
+  const classAccuracy = SKILLS.map((s) => ({ skill: s, accuracy: tally(firstTry, s.code) }));
   const weakest = classAccuracy
     .filter((s) => s.accuracy !== null)
     .sort((a, b) => a.accuracy! - b.accuracy!)[0];
@@ -119,7 +119,7 @@ export default async function ClassPage({ params }: PageProps<"/professor/turma/
               </thead>
               <tbody>
                 {roster.map((student) => {
-                  const mine = latest.filter((r) => r.studentId === student.id);
+                  const mine = firstTry.filter((r) => r.studentId === student.id);
                   const done = new Set(completions.filter((c) => c.studentId === student.id).map((c) => c.lessonId));
                   return (
                     <tr key={student.id}>
@@ -185,7 +185,7 @@ export default async function ClassPage({ params }: PageProps<"/professor/turma/
 
         {roster.length > 0 && (
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-            <span>% de acerto na última tentativa de cada questão:</span>
+            <span>% de acerto na primeira tentativa de cada questão:</span>
             {[
               ["bg-bad-soft", "abaixo de 50%"],
               ["bg-warn-soft", "50 a 74%"],

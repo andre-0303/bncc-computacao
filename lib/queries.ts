@@ -46,9 +46,11 @@ export async function classReport(classId: string) {
     .where(eq(students.classId, classId))
     .orderBy(students.name);
   const ids = roster.map((s) => s.id);
-  if (!ids.length) return { roster, completions: [], latest: [] };
+  if (!ids.length) return { roster, completions: [], firstTry: [] };
 
-  const [completions, latest] = await Promise.all([
+  // O relatório conta a primeira tentativa: depois de errar o aluno vê a resposta certa,
+  // então acertar na segunda não mostra que aprendeu.
+  const [completions, firstTry] = await Promise.all([
     db
       .select({ studentId: lessonCompletions.studentId, lessonId: lessonCompletions.lessonId })
       .from(lessonCompletions)
@@ -61,7 +63,7 @@ export async function classReport(classId: string) {
       })
       .from(attempts)
       .where(and(inArray(attempts.studentId, ids), inArray(attempts.questionId, QUESTION_IDS)))
-      .orderBy(attempts.studentId, attempts.questionId, desc(attempts.createdAt)),
+      .orderBy(attempts.studentId, attempts.questionId, attempts.createdAt),
   ]);
-  return { roster, completions, latest };
+  return { roster, completions, firstTry };
 }

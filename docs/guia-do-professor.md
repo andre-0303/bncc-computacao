@@ -42,7 +42,7 @@ As questões erradas vão para **Revisar erros**, onde o aluno pode tentar de no
 Clique no nome da turma para abrir o painel. Ele mostra uma tabela com um aluno por linha e uma habilidade por coluna (01 a 10; passe o mouse no cabeçalho para ver o nome da habilidade). Em cada célula:
 
 - **lições concluídas / total** daquela habilidade (por exemplo, 1/2);
-- **% de acerto** nas questões que o aluno já respondeu daquela habilidade. Vale sempre a **última tentativa** de cada questão: se o aluno errou e depois acertou na revisão, conta como acerto. As cores ajudam a ler a tabela: vermelho abaixo de 50%, amarelo de 50 a 74% e verde a partir de 75%. Um traço (–) indica que o aluno ainda não respondeu nada daquela habilidade.
+- **% de acerto** nas questões que o aluno já respondeu daquela habilidade. Vale sempre a **primeira tentativa** de cada questão: depois de errar, o aluno vê a resposta certa, então acertar na revisão não muda o número. A conclusão das lições e a revisão de erros continuam usando a última tentativa. As cores ajudam a ler a tabela: vermelho abaixo de 50%, amarelo de 50 a 74% e verde a partir de 75%. Um traço (–) indica que o aluno ainda não respondeu nada daquela habilidade.
 
 A última linha, **Turma**, mostra o percentual de acerto da turma inteira em cada habilidade. Quando a habilidade com menos acertos da turma está abaixo de 75%, ela aparece destacada acima da tabela como sugestão para retomar em aula.
 
