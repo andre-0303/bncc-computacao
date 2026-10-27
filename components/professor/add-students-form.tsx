@@ -20,15 +20,17 @@ export function AddStudentsForm({ classId }: { classId: string }) {
       <textarea
         id="names"
         name="names"
+        aria-invalid={!!state?.error || undefined}
+        aria-describedby={state?.error ? "names-hint names-error" : "names-hint"}
         required
         rows={5}
         placeholder={"Um nome por linha, por exemplo:\nAna Souza\nBruno Lima"}
-        className="rounded-lg border border-input bg-white px-3 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
+        className="rounded-lg border border-input bg-white px-3 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 aria-invalid:border-destructive"
       />
-      <p className="text-sm text-muted-foreground">
+      <p id="names-hint" className="text-sm text-muted-foreground">
         Dá para colar a lista de chamada. Cada aluno ganha um código de acesso pessoal.
       </p>
-      <FormError error={state?.error} />
+      <FormError id="names-error" error={state?.error} />
       <Button type="submit" size="lg" className="h-11 w-fit px-5" disabled={pending}>
         {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : <UserPlus aria-hidden />}
         Cadastrar

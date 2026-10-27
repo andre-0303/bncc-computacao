@@ -1,3 +1,6 @@
 allowBuilds:
   esbuild: false
   unrs-resolver: false
+overrides:
+  # GHSA-67mh-4wv8-2f99: esbuild antigo puxado pelo drizzle-kit (só dev)
+  "@esbuild-kit/core-utils>esbuild": ">=0.25.0"

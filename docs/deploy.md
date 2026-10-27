@@ -46,6 +46,7 @@ Com dados reais de alunos, o recomendado é trocar o `push` por migrações vers
 
 ## Checklist antes de usar com alunos
 
+- Dados fictícios de `lib/privacy.ts` trocados pelos reais (escola, encarregado) e `demo: false`. Veja [Privacidade](privacidade.md).
 - Conteúdo revisado por um professor de Computação.
 - `DATABASE_URL` de produção diferente da de desenvolvimento.
 - Primeiro professor criado com `pnpm teacher:create` no banco de produção.

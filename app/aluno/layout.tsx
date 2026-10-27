@@ -24,7 +24,7 @@ export default async function StudentLayout({ children }: LayoutProps<"/aluno">)
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 pt-6 pb-16">{children}</main>
+      <main id="conteudo" className="mx-auto w-full max-w-3xl flex-1 px-4 pt-6 pb-16">{children}</main>
     </>
   );
 }

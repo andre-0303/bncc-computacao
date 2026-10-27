@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 
+export const metadata: Metadata = { title: "Página não encontrada" };
+
 export default function NotFound() {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-4 py-12">
+    <main id="conteudo" className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-4 py-12">
       {/* fim da linha: depois da última estação, só trilho pontilhado */}
       <svg viewBox="0 0 200 40" className="h-10 w-48" aria-hidden>
         <path d="M6 20H96" stroke="var(--line-pc)" strokeWidth="10" strokeLinecap="round" />

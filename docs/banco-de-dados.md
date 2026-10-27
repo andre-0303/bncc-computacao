@@ -31,11 +31,11 @@ teachers 1──N classes 1──N students 1──N attempts
 teachers 1──N sessions N──1 students
 ```
 
-Todas as chaves estrangeiras usam `ON DELETE CASCADE`: apagar um professor apaga suas turmas, alunos, tentativas e sessões. Pela interface, só é possível apagar alunos (botão **Remover** no painel da turma, que apaga também as sessões, tentativas e conclusões dele). Turmas e professores só podem ser apagados direto no banco.
+Todas as chaves estrangeiras usam `ON DELETE CASCADE`: apagar um professor apaga suas turmas, alunos, tentativas e sessões. Pela interface, o professor apaga alunos (botão **Remover**) e turmas inteiras (**Apagar turma**); o cascade leva sessões, tentativas e conclusões. Professores só podem ser apagados direto no banco. Turmas inativas podem ser apagadas com `pnpm data:purge` (veja [Privacidade](privacidade.md#retenção)).
 
 ## Como o progresso é calculado
 
-O aluno pode responder a mesma questão várias vezes (refazendo a lição ou em "Revisar erros"). Cada resposta vira uma linha nova em `attempts`; nada é sobrescrito. Os cálculos usam sempre a **última tentativa de cada questão** (`SELECT DISTINCT ON (question_id) ... ORDER BY question_id, created_at DESC`). Assim, quem errou e depois acertou deixa de contar como erro.
+O aluno pode responder a mesma questão várias vezes (refazendo a lição ou em "Revisar erros"). Cada resposta vira uma linha nova em `attempts`; nada é sobrescrito. A conclusão de lição e a revisão de erros usam a **última tentativa de cada questão** (`SELECT DISTINCT ON (question_id) ... ORDER BY question_id, created_at DESC`). Assim, quem errou e depois acertou deixa de contar como erro. O relatório do professor é a exceção: usa a primeira tentativa (veja abaixo).
 
 - **Lição concluída:** existe linha em `lesson_completions` para o par aluno/lição. A cada resposta, `answerQuestion` (em `lib/actions.ts`) recalcula a lição a que a questão pertence, olhando a última tentativa de cada questão **atual** da lição. A lição é concluída quando todas as questões já foram respondidas **e** os acertos chegam a `passingScore(total)`, ou seja, 60% arredondado para cima (`content/index.ts`). Numa lição de 4 questões, são 3 acertos; numa de 5, também 3.
   - Acertos feitos em "Revisar erros" contam: se o aluno ficou abaixo de 60% e depois corrige questões na revisão, a lição passa a ser concluída.
@@ -46,7 +46,7 @@ O aluno pode responder a mesma questão várias vezes (refazendo a lição ou em
 - **Conteúdo removido não conta.** As consultas de `lib/queries.ts` só consideram tentativas de questões que ainda existem em `content/` e conclusões de lições que ainda existem. Isso vale para o painel do professor, para a revisão e para o mapa do aluno. As linhas antigas continuam no banco, só são ignoradas.
 - **Painel do professor** (`classReport` em `lib/queries.ts`), por aluno e habilidade:
   - lições concluídas / total de lições da habilidade;
-  - % de acerto = questões com última tentativa correta ÷ questões já respondidas daquela habilidade. Questões nunca respondidas não entram na conta; sem respostas, aparece "–".
+  - % de acerto = questões com **primeira** tentativa correta ÷ questões já respondidas daquela habilidade (depois de errar o aluno vê a resposta certa, então a última tentativa não mede aprendizado). Questões nunca respondidas não entram na conta; sem respostas, aparece "–".
   - A linha "Turma" aplica a mesma conta a todas as respostas da turma, e a habilidade com menor % é destacada como a que mais precisa ser retomada.
 
 ## Criando e alterando tabelas

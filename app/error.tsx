@@ -6,7 +6,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 
 export default function ErrorPage({ reset }: { error: Error; reset: () => void }) {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-4 py-12">
+    <main id="conteudo" className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-4 py-12">
       <div className="space-y-2 border-l-8 border-warn pl-4">
         <h1 className="text-3xl font-extrabold tracking-tight">A página não carregou</h1>
         <p className="text-muted-foreground">

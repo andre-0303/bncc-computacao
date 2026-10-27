@@ -8,7 +8,7 @@ import type { Lesson } from "@/content/types";
 import { createSession, destroySession, requireStudent, requireTeacher } from "@/lib/auth";
 import { attempts, classes, db, lessonCompletions, sessions, students, teachers } from "@/lib/db";
 import { normalizeAccessCode } from "@/lib/access-code";
-import { newAccessCode, verifySecret } from "@/lib/secrets";
+import { hashSecret, newAccessCode, verifySecret } from "@/lib/secrets";
 
 /**
  * `success` vira toast no cliente. `fields` devolve o que foi digitado: o React limpa o
@@ -32,12 +32,15 @@ export async function studentLogin(_: FormState, form: FormData): Promise<FormSt
 
 // Professores são criados direto no banco (pnpm teacher:create), não pela interface.
 // ponytail: sem limite de tentativas no login do professor; adicionar se virar alvo
+// Hash descartável: e-mail inexistente também paga um scrypt, para o tempo de resposta não revelar quais e-mails existem.
+const DUMMY_HASH = hashSecret(crypto.randomUUID());
+
 export async function teacherLogin(_: FormState, form: FormData): Promise<FormState> {
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   const password = String(form.get("password") ?? "");
 
   const [teacher] = await db.select().from(teachers).where(eq(teachers.email, email));
-  if (!teacher || !(await verifySecret(password, teacher.passwordHash)))
+  if (!(await verifySecret(password, teacher?.passwordHash ?? (await DUMMY_HASH))) || !teacher)
     return { error: "E-mail ou senha incorretos.", fields: { email } };
 
   await createSession({ teacherId: teacher.id });
@@ -123,11 +126,19 @@ export async function newStudentCode(studentId: string) {
   throw new Error("Não foi possível gerar o código");
 }
 
-/** Remove o aluno e todo o progresso dele. */
+/** Remove o aluno e todo o progresso dele (sessões, tentativas e conclusões caem por ON DELETE CASCADE). */
 export async function removeStudent(studentId: string) {
   const owned = db.select({ id: classes.id }).from(classes).where(eq(classes.teacherId, (await requireTeacher()).id));
   await db.delete(students).where(and(eq(students.id, studentId), inArray(students.classId, owned)));
   revalidatePath("/professor", "layout");
+}
+
+/** Apaga a turma; o ON DELETE CASCADE leva junto alunos, sessões, tentativas e conclusões. */
+export async function removeClass(classId: string) {
+  const teacher = await requireTeacher();
+  await db.delete(classes).where(and(eq(classes.id, classId), eq(classes.teacherId, teacher.id)));
+  revalidatePath("/professor", "layout");
+  redirect("/professor");
 }
 
 /** Corrige o nome do aluno sem mexer no código de acesso nem no progresso. */

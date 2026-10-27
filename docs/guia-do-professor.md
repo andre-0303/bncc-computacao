@@ -42,7 +42,7 @@ As questões erradas vão para **Revisar erros**, onde o aluno pode tentar de no
 Clique no nome da turma para abrir o painel. Ele mostra uma tabela com um aluno por linha e uma habilidade por coluna (01 a 10; passe o mouse no cabeçalho para ver o nome da habilidade). Em cada célula:
 
 - **lições concluídas / total** daquela habilidade (por exemplo, 1/2);
-- **% de acerto** nas questões que o aluno já respondeu daquela habilidade. Vale sempre a **última tentativa** de cada questão: se o aluno errou e depois acertou na revisão, conta como acerto. As cores ajudam a ler a tabela: vermelho abaixo de 50%, amarelo de 50 a 74% e verde a partir de 75%. Um traço (–) indica que o aluno ainda não respondeu nada daquela habilidade.
+- **% de acerto** nas questões que o aluno já respondeu daquela habilidade. Vale sempre a **primeira tentativa** de cada questão: depois de errar, o aluno vê a resposta certa, então acertar na revisão não muda o número. A conclusão das lições e a revisão de erros continuam usando a última tentativa. As cores ajudam a ler a tabela: vermelho abaixo de 50%, amarelo de 50 a 74% e verde a partir de 75%. Um traço (–) indica que o aluno ainda não respondeu nada daquela habilidade.
 
 A última linha, **Turma**, mostra o percentual de acerto da turma inteira em cada habilidade. Quando a habilidade com menos acertos da turma está abaixo de 75%, ela aparece destacada acima da tabela como sugestão para retomar em aula.
 
@@ -52,13 +52,20 @@ Se você remover ou trocar questões do conteúdo, as respostas antigas a elas d
 
 ## 6. Código perdido, vazado ou aluno que saiu
 
-Na linha de cada aluno há dois botões:
+Na linha de cada aluno há estes botões:
 
 - **Gerar novo código** (ícone de setas): use quando o código vazar ou quando o aluno perder o cartão e você preferir trocar. O código antigo para de funcionar na hora, e quem estiver usando o código antigo é desconectado. O novo código aparece na sua tela e na tabela; entregue ao aluno em particular. O progresso dele não se perde.
 - **Editar nome** (ícone de lápis): corrige o nome. O código e o progresso continuam iguais.
+- **Baixar dados** (ícone de download): baixa um arquivo com tudo o que o sistema guarda sobre o aluno. Use quando o aluno ou a família pedir uma cópia dos dados.
 - **Remover** (ícone de lixeira): tira o aluno da turma. Antes, o sistema pede confirmação. **Todo o progresso do aluno é apagado** e não há como desfazer.
 
 Para corrigir o nome de um aluno, use o botão de lápis ao lado dele. O código de acesso e o progresso continuam os mesmos.
+
+## 7. Fim do ano e privacidade
+
+No fim da página da turma há o botão **Apagar turma**. Use quando a turma não for mais usada: os alunos e todos os dados deles são apagados, sem como desfazer. Turmas sem nenhuma atividade por 12 meses também são apagadas.
+
+Se um aluno ou a família pedir para ver, corrigir ou apagar os dados, você resolve na própria turma (baixar dados, editar nome, remover). O aluno também vê o que é guardado em **Meus dados**. A política completa está no link **Privacidade e cookies**, no rodapé do site.
 
 ## Observações importantes
 

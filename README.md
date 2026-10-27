@@ -37,6 +37,7 @@ Já tinha uma instalação da versão com apelido e PIN? O `db:push` não conver
 | `pnpm test` | Valida o conteúdo das lições (ids, gabaritos, as 10 habilidades). |
 | `pnpm db:push` | Aplica o schema de `lib/db/schema.ts` no banco (drizzle-kit push). |
 | `pnpm teacher:create "Nome" email` | Cria um professor no banco do `.env`, com senha aleatória mostrada uma única vez. |
+| `pnpm data:purge [--apply]` | Lista (ou apaga, com `--apply`) turmas sem atividade há 12 meses. Veja [Privacidade](docs/privacidade.md#retenção). |
 
 ## Documentação
 
@@ -47,6 +48,11 @@ Já tinha uma instalação da versão com apelido e PIN? O `db:push` não conver
 - [Habilidades da BNCC](docs/bncc.md): mapa das habilidades EF09CO01 a EF09CO10 e das lições de cada uma.
 - [Guia do professor](docs/guia-do-professor.md): uso do sistema em sala, sem termos técnicos.
 - [Deploy](docs/deploy.md): publicação na Vercel com banco na Neon.
+- [Privacidade](docs/privacidade.md): LGPD, cookies, direitos dos alunos, retenção e dados de demonstração em `lib/privacy.ts`.
+
+## Privacidade
+
+A política fica em `/privacidade` (com a seção de cookies: só o cookie de sessão, sem banner). O professor pode baixar os dados de um aluno, apagar um aluno ou a turma inteira; o aluno vê o que é guardado em "Meus dados". Escola e contatos da política são fictícios (projeto de portfólio); para uso real, troque-os em `lib/privacy.ts`. Detalhes em [Privacidade](docs/privacidade.md).
 
 ## Limitações conhecidas
 

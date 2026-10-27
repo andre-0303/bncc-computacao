@@ -1,10 +1,13 @@
 import { ArrowRight, TriangleAlert } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { lineStyle, Station } from "@/components/metro";
 import { AXIS_LABEL, SKILLS } from "@/content";
 import type { Axis } from "@/content/types";
 import { requireStudent } from "@/lib/auth";
 import { completedLessons, wrongQuestionIds } from "@/lib/queries";
+
+export const metadata: Metadata = { title: "Seu mapa" };
 
 export default async function StudentHome() {
   const student = await requireStudent();
@@ -49,7 +52,7 @@ export default async function StudentHome() {
             <ArrowRight className="size-5 transition-transform group-hover:translate-x-0.5" />
           </span>
           <span className="min-w-0">
-            <span className="block text-sm font-semibold text-white/85">Próxima parada: {next.skill.title}</span>
+            <span className="block text-sm font-semibold text-white">Próxima parada: {next.skill.title}</span>
             <span className="block truncate text-lg font-extrabold">{next.lesson.title}</span>
           </span>
         </Link>
@@ -91,6 +94,10 @@ export default async function StudentHome() {
           </section>
         );
       })}
+
+      <Link href="/aluno/meus-dados" className="block w-fit rounded-md text-sm font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground">
+        Meus dados
+      </Link>
     </div>
   );
 }

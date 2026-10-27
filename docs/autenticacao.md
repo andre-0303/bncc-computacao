@@ -9,7 +9,7 @@ Não há biblioteca de autenticação. O código está dividido assim:
 
 ## Sessões
 
-- No login é gerado um token aleatório de 32 bytes, gravado na tabela `sessions` com validade de **30 dias**.
+- No login é gerado um token aleatório de 32 bytes, gravado na tabela `sessions` com validade de **30 dias** para professor e **12 horas** para aluno. O cookie do aluno não tem `expires`, então some quando o navegador fecha (computadores compartilhados da escola).
 - Antes de gravar a sessão nova, `createSession` apaga todas as sessões vencidas. Assim a tabela não cresce sem limite e não é preciso agendar limpeza (cron).
 - O token vai num cookie `session` com `httpOnly`, `sameSite=lax`, `path=/` e `secure` em produção.
 - A cada requisição, `getSession` busca o token no banco e só aceita sessões não expiradas. O resultado é memoizado por requisição com `cache` do React.

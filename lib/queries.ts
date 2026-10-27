@@ -1,11 +1,24 @@
 import "server-only";
 import { and, desc, eq, inArray } from "drizzle-orm";
+import { notFound } from "next/navigation";
+import { cache } from "react";
 import { QUESTIONS, SKILLS } from "@/content";
-import { attempts, db, lessonCompletions, students } from "@/lib/db";
+import { requireTeacher } from "@/lib/auth";
+import { attempts, classes, db, lessonCompletions, students } from "@/lib/db";
 
 // Só conta o que ainda existe no conteúdo: questões ou lições removidas deixam de pesar no progresso.
 const QUESTION_IDS = [...QUESTIONS.keys()];
 const LESSON_IDS = SKILLS.flatMap((s) => s.lessons.map((l) => l.id));
+
+/** Turma do professor logado; memoizada para a página e o título da aba não consultarem duas vezes. */
+export const ownedClass = cache(async (id: string) => {
+  const teacher = await requireTeacher();
+  const [klass] = await db
+    .select()
+    .from(classes)
+    .where(and(eq(classes.id, id), eq(classes.teacherId, teacher.id)));
+  return klass ?? notFound();
+});
 
 /** lessonId → melhor nota da lição concluída */
 export async function completedLessons(studentId: string) {
@@ -33,9 +46,11 @@ export async function classReport(classId: string) {
     .where(eq(students.classId, classId))
     .orderBy(students.name);
   const ids = roster.map((s) => s.id);
-  if (!ids.length) return { roster, completions: [], latest: [] };
+  if (!ids.length) return { roster, completions: [], firstTry: [] };
 
-  const [completions, latest] = await Promise.all([
+  // O relatório conta a primeira tentativa: depois de errar o aluno vê a resposta certa,
+  // então acertar na segunda não mostra que aprendeu.
+  const [completions, firstTry] = await Promise.all([
     db
       .select({ studentId: lessonCompletions.studentId, lessonId: lessonCompletions.lessonId })
       .from(lessonCompletions)
@@ -48,7 +63,7 @@ export async function classReport(classId: string) {
       })
       .from(attempts)
       .where(and(inArray(attempts.studentId, ids), inArray(attempts.questionId, QUESTION_IDS)))
-      .orderBy(attempts.studentId, attempts.questionId, desc(attempts.createdAt)),
+      .orderBy(attempts.studentId, attempts.questionId, attempts.createdAt),
   ]);
-  return { roster, completions, latest };
+  return { roster, completions, firstTry };
 }

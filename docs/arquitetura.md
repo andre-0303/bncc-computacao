@@ -13,14 +13,18 @@ app/                      Rotas (App Router)
   aluno/[skill]/          /aluno/ef09co01        lições de uma habilidade
   aluno/[skill]/[lesson]/ /aluno/ef09co01/ef09co01-l1   explicação, "Não entendi" e exercícios
   aluno/revisar/          /aluno/revisar         questões cuja última tentativa foi erro
+  aluno/meus-dados/       /aluno/meus-dados      o que o sistema guarda sobre o aluno (LGPD)
+  privacidade/            /privacidade           política de privacidade e cookies (pública)
   professor/login/        /professor/login       login e cadastro do professor
   professor/page.tsx      /professor             lista de turmas e criação de turma
   professor/turma/[id]/   /professor/turma/:id   cadastro de alunos, tabela aluno × habilidade, novo código, remover
   professor/turma/[id]/cartoes/  /professor/turma/:id/cartoes  cartões com o código de acesso, para imprimir
+  professor/aluno/[id]/dados/    GET /professor/aluno/:id/dados  route handler: baixa os dados do aluno em JSON
 components/               Componentes de interface (quiz, markdown, formulários), components/professor (cadastro de alunos, ações por aluno, impressão) e components/ui (shadcn)
 content/                  Conteúdo pedagógico em TypeScript (uma habilidade por arquivo)
 lib/
   auth.ts                 sessões, requireStudent/requireTeacher
+  privacy.ts              dados da política (placeholders da escola), nome e duração do cookie
   secrets.ts              hash de senha (scrypt) e geração do código de acesso (só node:crypto)
   access-code.ts          normalizar e formatar o código de acesso (funções puras)
   actions.ts              todas as Server Actions (veja a lista abaixo)
@@ -28,6 +32,7 @@ lib/
   db/schema.ts            schema do banco (Drizzle)
   db/index.ts             cliente Drizzle (drizzle-orm/neon-http)
 scripts/create-teacher.ts cria um professor direto no banco (pnpm teacher:create)
+scripts/purge-inactive.ts apaga turmas inativas (pnpm data:purge), veja privacidade.md
 drizzle.config.ts         configuração do drizzle-kit (usado pelo pnpm db:push)
 ```
 
@@ -45,6 +50,7 @@ Todas ficam em `lib/actions.ts`:
 | `createClass` | professor | cria uma turma (só o nome) |
 | `addStudents` | professor | cadastra alunos numa turma, um nome por linha, e gera o código de cada um |
 | `newStudentCode` | professor | troca o código de um aluno e derruba as sessões abertas dele |
+| `removeClass` | professor | apaga a turma com todos os alunos e dados deles |
 | `renameStudent` | professor | corrige o nome do aluno, sem mudar código nem progresso |
 | `removeStudent` | professor | apaga um aluno e todo o progresso dele |
 | `answerQuestion` | aluno | corrige uma resposta, grava a tentativa e atualiza a conclusão da lição |

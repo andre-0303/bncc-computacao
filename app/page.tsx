@@ -49,7 +49,7 @@ function HeroMap() {
 
 export default function Home() {
   return (
-    <main className="mx-auto grid w-full max-w-5xl flex-1 content-center items-center gap-10 px-4 py-10 md:grid-cols-[1fr_1.1fr] md:gap-14 md:py-16">
+    <main id="conteudo" className="mx-auto grid w-full max-w-5xl flex-1 content-center items-center gap-10 px-4 py-10 md:grid-cols-[1fr_1.1fr] md:gap-14 md:py-16">
       <div className="space-y-6 md:order-1">
         <BrandMark className="size-10" />
         <h1 className="text-4xl leading-[1.05] font-extrabold tracking-tight text-balance sm:text-5xl">

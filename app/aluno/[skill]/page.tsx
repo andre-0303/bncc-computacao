@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { BackLink } from "@/components/back-link";
 import { notFound } from "next/navigation";
@@ -6,6 +7,10 @@ import { AXIS_LABEL, skillBySlug } from "@/content";
 import { requireStudent } from "@/lib/auth";
 import { completedLessons } from "@/lib/queries";
 import { cn } from "@/lib/utils";
+
+export async function generateMetadata({ params }: PageProps<"/aluno/[skill]">): Promise<Metadata> {
+  return { title: skillBySlug((await params).skill)?.title };
+}
 
 export default async function SkillPage({ params }: PageProps<"/aluno/[skill]">) {
   const { skill: slug } = await params;
