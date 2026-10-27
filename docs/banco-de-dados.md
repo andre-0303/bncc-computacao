@@ -31,7 +31,7 @@ teachers 1──N classes 1──N students 1──N attempts
 teachers 1──N sessions N──1 students
 ```
 
-Todas as chaves estrangeiras usam `ON DELETE CASCADE`: apagar um professor apaga suas turmas, alunos, tentativas e sessões. Pela interface, só é possível apagar alunos (botão **Remover** no painel da turma, que apaga também as sessões, tentativas e conclusões dele). Turmas e professores só podem ser apagados direto no banco.
+Todas as chaves estrangeiras usam `ON DELETE CASCADE`: apagar um professor apaga suas turmas, alunos, tentativas e sessões. Pela interface, o professor apaga alunos (botão **Remover**) e turmas inteiras (**Apagar turma**); o cascade leva sessões, tentativas e conclusões. Professores só podem ser apagados direto no banco. Turmas inativas podem ser apagadas com `pnpm data:purge` (veja [Privacidade](privacidade.md#retenção)).
 
 ## Como o progresso é calculado
 

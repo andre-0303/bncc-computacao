@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Overpass, Overpass_Mono } from "next/font/google";
+import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Pular para o conteúdo
         </a>
         {children}
+        <SiteFooter />
         <Toaster position="top-center" richColors />
       </body>
     </html>

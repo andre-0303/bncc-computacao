@@ -94,6 +94,10 @@ export default async function StudentHome() {
           </section>
         );
       })}
+
+      <Link href="/aluno/meus-dados" className="block w-fit rounded-md text-sm font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground">
+        Meus dados
+      </Link>
     </div>
   );
 }

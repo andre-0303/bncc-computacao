@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:push": "drizzle-kit push",
     "test": "node --test content/content.test.ts",
-    "teacher:create": "node --env-file=.env --no-warnings scripts/create-teacher.ts"
+    "teacher:create": "node --env-file=.env --no-warnings scripts/create-teacher.ts",
+    "data:purge": "node --env-file=.env --no-warnings scripts/purge-inactive.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

@@ -1,9 +1,9 @@
 "use client";
 
-import { LoaderCircle, Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { Download, LoaderCircle, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { useTransition } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { newStudentCode, removeStudent, renameStudent } from "@/lib/actions";
 import { formatAccessCode } from "@/lib/access-code";
 
@@ -37,7 +37,7 @@ export function StudentActions({ studentId, name }: { studentId: string; name: s
   }
 
   function remove() {
-    if (!confirm(`Remover ${name} da turma? Todo o progresso dele será apagado.`)) return;
+    if (!confirm(`Remover ${name} da turma? Todos os dados dele (respostas e progresso) serão apagados, sem como desfazer.`)) return;
     startTransition(async () => {
       await removeStudent(studentId);
       toast.success(`${name} removido da turma`);
@@ -56,6 +56,15 @@ export function StudentActions({ studentId, name }: { studentId: string; name: s
           <Button variant="ghost" size="icon-sm" onClick={regenerate} aria-label={`Gerar novo código para ${name}`} title="Gerar novo código">
             <RefreshCw aria-hidden />
           </Button>
+          <a
+            href={`/professor/aluno/${studentId}/dados`}
+            download
+            className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
+            aria-label={`Baixar os dados de ${name}`}
+            title="Baixar dados do aluno"
+          >
+            <Download aria-hidden />
+          </a>
           <Button variant="ghost" size="icon-sm" onClick={remove} aria-label={`Remover ${name}`} title="Remover aluno" className="hover:text-bad">
             <Trash2 aria-hidden />
           </Button>

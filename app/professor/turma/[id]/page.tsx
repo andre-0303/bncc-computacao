@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BackLink } from "@/components/back-link";
 import { LINE } from "@/components/metro";
 import { AddStudentsForm } from "@/components/professor/add-students-form";
+import { RemoveClassButton } from "@/components/professor/remove-class-button";
 import { StudentActions } from "@/components/professor/student-actions";
 import { TeacherHeader } from "@/components/professor/teacher-header";
 import { buttonVariants } from "@/components/ui/button";
@@ -112,7 +113,7 @@ export default async function ClassPage({ params }: PageProps<"/professor/turma/
                       </span>
                     </th>
                   ))}
-                  <th scope="col" className="w-32">
+                  <th scope="col" className="w-40">
                     <span className="sr-only">Ações</span>
                   </th>
                 </tr>
@@ -208,6 +209,16 @@ export default async function ClassPage({ params }: PageProps<"/professor/turma/
             funcionar na hora.
           </p>
         )}
+        <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-white p-6">
+          <div className="max-w-[60ch] space-y-1">
+            <h2 className="text-lg font-extrabold">Fim do ano letivo?</h2>
+            <p className="text-sm text-muted-foreground">
+              Apague a turma quando ela não for mais usada: os alunos e todos os dados deles somem junto. Antes, se
+              precisar, baixe os dados de cada aluno pelo botão de download.
+            </p>
+          </div>
+          <RemoveClassButton classId={klass.id} name={klass.name} />
+        </section>
       </main>
     </>
   );

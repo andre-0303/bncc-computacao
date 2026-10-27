@@ -55,6 +55,13 @@ export default function StudentLoginPage() {
           {pending ? "Entrando" : "Entrar"}
         </Button>
       </form>
+      <p className="text-sm text-muted-foreground">
+        Quer saber quais dados o site guarda sobre você?{" "}
+        <Link href="/privacidade" className="font-semibold text-foreground underline underline-offset-4">
+          Leia a política de privacidade
+        </Link>
+        .
+      </p>
     </main>
   );
 }

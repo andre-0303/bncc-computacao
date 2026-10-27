@@ -5,13 +5,12 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { classes, db, sessions, students, teachers } from "@/lib/db";
-
-const COOKIE = "session";
-const SESSION_DAYS = 30;
+import { SESSION_COOKIE as COOKIE, STUDENT_SESSION_HOURS, TEACHER_SESSION_DAYS } from "@/lib/privacy";
 
 export async function createSession(owner: { teacherId: string } | { studentId: string }) {
   const token = randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + SESSION_DAYS * 86_400_000);
+  const isTeacher = "teacherId" in owner;
+  const expiresAt = new Date(Date.now() + (isTeacher ? TEACHER_SESSION_DAYS * 24 : STUDENT_SESSION_HOURS) * 3_600_000);
   // Limpeza das sessões vencidas a cada login: mantém a tabela pequena sem precisar de cron.
   await db.delete(sessions).where(lt(sessions.expiresAt, new Date()));
   await db.insert(sessions).values({ token, expiresAt, ...owner });
@@ -19,7 +18,8 @@ export async function createSession(owner: { teacherId: string } | { studentId: 
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    expires: expiresAt,
+    // Aluno: sem expires, o cookie some quando o navegador fecha.
+    ...(isTeacher && { expires: expiresAt }),
     path: "/",
   });
 }
