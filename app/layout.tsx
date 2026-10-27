@@ -14,7 +14,7 @@ const overpassMono = Overpass_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Computação 9º ano",
+  title: { default: "Computação 9º ano", template: "%s | Computação 9º ano" },
   description: "Microaprendizagem de Computação (BNCC) para o 9º ano, complemento às aulas.",
 };
 
@@ -22,6 +22,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="pt-BR" className={`${overpass.variable} ${overpassMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
+        <a
+          href="#conteudo"
+          className="sr-only z-50 rounded-lg bg-ink px-4 py-3 font-bold text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+        >
+          Pular para o conteúdo
+        </a>
         {children}
         <Toaster position="top-center" richColors />
       </body>

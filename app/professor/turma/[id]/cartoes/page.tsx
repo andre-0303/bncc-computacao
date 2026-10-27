@@ -1,13 +1,18 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
 import { BackLink } from "@/components/back-link";
 import { BrandMark } from "@/components/brand";
 import { PrintButton } from "@/components/professor/print-button";
 import { TeacherHeader } from "@/components/professor/teacher-header";
 import { formatAccessCode } from "@/lib/access-code";
 import { requireTeacher } from "@/lib/auth";
-import { classes, db, students } from "@/lib/db";
+import { db, students } from "@/lib/db";
+import { ownedClass } from "@/lib/queries";
+
+export async function generateMetadata({ params }: PageProps<"/professor/turma/[id]/cartoes">): Promise<Metadata> {
+  return { title: `Códigos de acesso, ${(await ownedClass((await params).id)).name}` };
+}
 
 /** Cartões recortáveis com o código de acesso de cada aluno. */
 export default async function CardsPage({
@@ -15,11 +20,7 @@ export default async function CardsPage({
 }: PageProps<"/professor/turma/[id]/cartoes">) {
   const { id } = await params;
   const teacher = await requireTeacher();
-  const [klass] = await db
-    .select()
-    .from(classes)
-    .where(and(eq(classes.id, id), eq(classes.teacherId, teacher.id)));
-  if (!klass) notFound();
+  const klass = await ownedClass(id);
 
   const roster = await db
     .select({ name: students.name, accessCode: students.accessCode })
@@ -33,7 +34,7 @@ export default async function CardsPage({
       <div className="print:hidden">
         <TeacherHeader name={teacher.name} />
       </div>
-      <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-4 py-8 print:max-w-none print:p-0">
+      <main id="conteudo" className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-4 py-8 print:max-w-none print:p-0">
         <div className="space-y-4 print:hidden">
           <BackLink href={`/professor/turma/${klass.id}`}>
             {klass.name}

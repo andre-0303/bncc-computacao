@@ -47,7 +47,7 @@ export function StudentActions({ studentId, name }: { studentId: string; name: s
   return (
     <div className="flex justify-end gap-1">
       {pending ? (
-        <LoaderCircle className="m-2 size-4 animate-spin text-muted-foreground" aria-label="Aguarde" />
+        <LoaderCircle className="m-2 size-4 animate-spin text-muted-foreground" role="img" aria-label="Aguarde" />
       ) : (
         <>
           <Button variant="ghost" size="icon-sm" onClick={rename} aria-label={`Editar nome de ${name}`} title="Editar nome">

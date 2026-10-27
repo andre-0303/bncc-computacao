@@ -1,4 +1,5 @@
 import { PartyPopper } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { BackLink } from "@/components/back-link";
 import { Quiz } from "@/components/quiz";
@@ -6,6 +7,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { QUESTIONS, toPublic } from "@/content";
 import { requireStudent } from "@/lib/auth";
 import { wrongQuestionIds } from "@/lib/queries";
+
+export const metadata: Metadata = { title: "Revisar erros" };
 
 export default async function ReviewPage() {
   const student = await requireStudent();

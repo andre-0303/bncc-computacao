@@ -1,8 +1,7 @@
-import { and, eq } from "drizzle-orm";
 import { Printer, TriangleAlert } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { BackLink } from "@/components/back-link";
-import { notFound } from "next/navigation";
 import { LINE } from "@/components/metro";
 import { AddStudentsForm } from "@/components/professor/add-students-form";
 import { StudentActions } from "@/components/professor/student-actions";
@@ -11,8 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { SKILLS } from "@/content";
 import { formatAccessCode } from "@/lib/access-code";
 import { requireTeacher } from "@/lib/auth";
-import { classes, db } from "@/lib/db";
-import { classReport } from "@/lib/queries";
+import { classReport, ownedClass } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 const pct = (hits: number, total: number) => (total ? Math.round((hits / total) * 100) : null);
@@ -20,6 +18,17 @@ const pct = (hits: number, total: number) => (total ? Math.round((hits / total) 
 function tally(rows: { skillCode: string; correct: boolean }[], skillCode: string) {
   const answered = rows.filter((r) => r.skillCode === skillCode);
   return pct(answered.filter((r) => r.correct).length, answered.length);
+}
+
+/** Célula sem respostas mostra um traço; o leitor de tela ouve o texto. */
+function percent(accuracy: number | null) {
+  if (accuracy !== null) return `${accuracy}%`;
+  return (
+    <>
+      <span aria-hidden>–</span>
+      <span className="sr-only">sem respostas</span>
+    </>
+  );
 }
 
 /** Faixas do mapa de calor: abaixo de 50% pede atenção, 75% ou mais está bem. */
@@ -30,14 +39,14 @@ function heat(accuracy: number | null) {
   return "bg-ok-soft text-[#0f4d2c]";
 }
 
+export async function generateMetadata({ params }: PageProps<"/professor/turma/[id]">): Promise<Metadata> {
+  return { title: (await ownedClass((await params).id)).name };
+}
+
 export default async function ClassPage({ params }: PageProps<"/professor/turma/[id]">) {
   const { id } = await params;
   const teacher = await requireTeacher();
-  const [klass] = await db
-    .select()
-    .from(classes)
-    .where(and(eq(classes.id, id), eq(classes.teacherId, teacher.id)));
-  if (!klass) notFound();
+  const klass = await ownedClass(id);
 
   const { roster, completions, latest } = await classReport(klass.id);
 
@@ -49,7 +58,7 @@ export default async function ClassPage({ params }: PageProps<"/professor/turma/
   return (
     <>
       <TeacherHeader name={teacher.name} />
-      <main className="mx-auto w-full max-w-6xl flex-1 space-y-8 px-4 py-8">
+      <main id="conteudo" className="mx-auto w-full max-w-6xl flex-1 space-y-8 px-4 py-8">
         <BackLink href="/professor">Turmas</BackLink>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -80,7 +89,13 @@ export default async function ClassPage({ params }: PageProps<"/professor/turma/
         )}
 
         {roster.length ? (
-          <div className="overflow-x-auto rounded-2xl border bg-white">
+          // rolável no celular: focável para rolar pelo teclado
+          <div
+            role="region"
+            aria-label="Acertos por aluno e habilidade"
+            tabIndex={0}
+            className="overflow-x-auto rounded-2xl border bg-white"
+          >
             <table className="w-full min-w-[900px] table-fixed border-separate border-spacing-1 p-2 text-sm">
               <thead>
                 <tr>
@@ -122,8 +137,8 @@ export default async function ClassPage({ params }: PageProps<"/professor/turma/
                         const lessons = s.lessons.filter((l) => done.has(l.id)).length;
                         return (
                           <td key={s.code} className={cn("rounded-lg px-1 py-2 text-center tabular-nums", heat(accuracy))}>
-                            <span className="block text-base font-extrabold">{accuracy === null ? "–" : `${accuracy}%`}</span>
-                            <span className="block text-xs opacity-75">
+                            <span className="block text-base font-extrabold">{percent(accuracy)}</span>
+                            <span className="block text-xs">
                               {lessons}/{s.lessons.length} lições
                             </span>
                           </td>
@@ -150,7 +165,7 @@ export default async function ClassPage({ params }: PageProps<"/professor/turma/
                         skill === weakest?.skill && "ring-2 ring-ink",
                       )}
                     >
-                      {accuracy === null ? "–" : `${accuracy}%`}
+                      {percent(accuracy)}
                     </td>
                   ))}
                   <td />

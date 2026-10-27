@@ -31,6 +31,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
           "--border-radius": "var(--radius)",
+          // richColors do sonner fica abaixo de 4,5:1; usa os tons escuros do app
+          "--success-text": "#0f4d2c",
+          "--error-text": "#8f1d22",
         } as React.CSSProperties
       }
       toastOptions={{

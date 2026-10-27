@@ -1,7 +1,8 @@
 /** Esqueleto enquanto o mapa ou a trilha carregam: um trecho de linha com estações vazias. */
 export default function Loading() {
   return (
-    <div className="space-y-8" aria-busy="true" aria-label="Carregando">
+    <div className="space-y-8" role="status" aria-busy="true">
+      <span className="sr-only">Carregando</span>
       <div className="space-y-3">
         <div className="h-8 w-48 rounded-lg bg-muted" />
         <div className="h-4 w-64 max-w-full rounded bg-muted" />

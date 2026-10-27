@@ -1,11 +1,24 @@
 import "server-only";
 import { and, desc, eq, inArray } from "drizzle-orm";
+import { notFound } from "next/navigation";
+import { cache } from "react";
 import { QUESTIONS, SKILLS } from "@/content";
-import { attempts, db, lessonCompletions, students } from "@/lib/db";
+import { requireTeacher } from "@/lib/auth";
+import { attempts, classes, db, lessonCompletions, students } from "@/lib/db";
 
 // Só conta o que ainda existe no conteúdo: questões ou lições removidas deixam de pesar no progresso.
 const QUESTION_IDS = [...QUESTIONS.keys()];
 const LESSON_IDS = SKILLS.flatMap((s) => s.lessons.map((l) => l.id));
+
+/** Turma do professor logado; memoizada para a página e o título da aba não consultarem duas vezes. */
+export const ownedClass = cache(async (id: string) => {
+  const teacher = await requireTeacher();
+  const [klass] = await db
+    .select()
+    .from(classes)
+    .where(and(eq(classes.id, id), eq(classes.teacherId, teacher.id)));
+  return klass ?? notFound();
+});
 
 /** lessonId → melhor nota da lição concluída */
 export async function completedLessons(studentId: string) {

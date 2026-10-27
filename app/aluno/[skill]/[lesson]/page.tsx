@@ -1,10 +1,16 @@
 import { Lightbulb } from "lucide-react";
+import type { Metadata } from "next";
 import { BackLink } from "@/components/back-link";
 import { notFound } from "next/navigation";
 import { Markdown } from "@/components/markdown";
 import { lineStyle } from "@/components/metro";
 import { Quiz } from "@/components/quiz";
 import { skillBySlug, toPublic } from "@/content";
+
+export async function generateMetadata({ params }: PageProps<"/aluno/[skill]/[lesson]">): Promise<Metadata> {
+  const { skill, lesson } = await params;
+  return { title: skillBySlug(skill)?.lessons.find((l) => l.id === lesson)?.title };
+}
 
 export default async function LessonPage({ params }: PageProps<"/aluno/[skill]/[lesson]">) {
   const { skill: slug, lesson: lessonId } = await params;
@@ -33,8 +39,8 @@ export default async function LessonPage({ params }: PageProps<"/aluno/[skill]/[
         <summary className="flex cursor-pointer list-none items-center gap-3 rounded-xl p-4 font-bold [&::-webkit-details-marker]:hidden">
           <Lightbulb className="size-5 shrink-0 text-(--line)" aria-hidden />
           <span className="flex-1">Não entendi, explica de outro jeito</span>
-          <span className="text-sm font-semibold text-muted-foreground group-open:hidden">Abrir</span>
-          <span className="hidden text-sm font-semibold text-muted-foreground group-open:inline">Fechar</span>
+          <span className="text-sm font-semibold text-muted-foreground group-open:hidden" aria-hidden>Abrir</span>
+          <span className="hidden text-sm font-semibold text-muted-foreground group-open:inline" aria-hidden>Fechar</span>
         </summary>
         <div className="px-4 pb-5 animate-in fade-in slide-in-from-top-1">
           <Markdown>{lesson.simpler}</Markdown>

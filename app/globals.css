@@ -54,12 +54,13 @@
   --ink: #1b1e3a;
 
   --line-pc: #2b63f6;
-  --line-md: #0e9f87;
-  --line-cd: #d9437a;
+  /* tons escurecidos para texto branco passar de 4,5:1 (WCAG 1.4.3) */
+  --line-md: #0b816d;
+  --line-cd: #cc3f73;
 
-  --ok: #1e9e5a;
+  --ok: #19834b;
   --ok-soft: #e4f6ec;
-  --bad: #e0484e;
+  --bad: #cd4247;
   --bad-soft: #fdeaea;
   --warn: #f5b700;
   --warn-soft: #fff6d6;
@@ -80,7 +81,7 @@
   --accent-foreground: var(--ink);
   --destructive: var(--bad);
   --border: #dde1ec;
-  --input: #cfd4e3;
+  --input: #868ca6; /* borda de campo: 3:1 sobre branco e papel (WCAG 1.4.11) */
   --ring: #2b63f6;
   --radius: 0.75rem;
 }
@@ -97,6 +98,13 @@
   }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
+  }
+  /* Foco não fica escondido sob o cabeçalho fixo do aluno nem sob o painel de resposta do quiz (WCAG 2.4.11) */
+  html {
+    scroll-padding-top: 5rem;
+  }
+  html:has([data-feedback-panel]) {
+    scroll-padding-bottom: 16rem;
   }
 }
 
@@ -135,8 +143,16 @@
   to { transform: scaleX(1); }
 }
 
+/* Movimento reduzido: desliga animações (tw-animate, estação, spinners) e a barra de leitura */
 @media (prefers-reduced-motion: reduce) {
-  .station-on { animation: none; }
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reading-bar { display: none; }
 }
 
 /* Sonner fixa system-ui; usa a fonte do app */

@@ -19,13 +19,21 @@ export function CreateClassForm() {
     <form action={action} className="grid gap-2">
       <Label htmlFor="class-name">Nova turma</Label>
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Input id="class-name" name="name" required placeholder="Ex.: 9º ano A" className="h-11 bg-white text-base" />
+        <Input
+          id="class-name"
+          name="name"
+          aria-invalid={!!state?.error || undefined}
+          aria-describedby={state?.error ? "class-name-error" : undefined}
+          required
+          placeholder="Ex.: 9º ano A"
+          className="h-11 bg-white text-base"
+        />
         <Button type="submit" size="lg" className="h-11 px-5" disabled={pending}>
           {pending ? <LoaderCircle className="animate-spin" aria-hidden /> : <Plus aria-hidden />}
           Criar turma
         </Button>
       </div>
-      <FormError error={state?.error} />
+      <FormError id="class-name-error" error={state?.error} />
     </form>
   );
 }

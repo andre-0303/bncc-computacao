@@ -1,10 +1,13 @@
 import { count, desc, eq } from "drizzle-orm";
 import { ChevronRight } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { CreateClassForm } from "@/components/professor/create-class-form";
 import { TeacherHeader } from "@/components/professor/teacher-header";
 import { requireTeacher } from "@/lib/auth";
 import { classes, db, students } from "@/lib/db";
+
+export const metadata: Metadata = { title: "Suas turmas" };
 
 export default async function TeacherHome() {
   const teacher = await requireTeacher();
@@ -19,7 +22,7 @@ export default async function TeacherHome() {
   return (
     <>
       <TeacherHeader name={teacher.name} />
-      <main className="mx-auto w-full max-w-3xl flex-1 space-y-10 px-4 py-10">
+      <main id="conteudo" className="mx-auto w-full max-w-3xl flex-1 space-y-10 px-4 py-10">
         <h1 className="text-3xl font-extrabold tracking-tight">Suas turmas</h1>
         <CreateClassForm />
         {list.length ? (
