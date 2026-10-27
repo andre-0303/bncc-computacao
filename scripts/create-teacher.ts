@@ -1,8 +1,12 @@
 // Cria um professor direto no banco. Não existe cadastro pela interface, por segurança.
 // Uso: pnpm teacher:create "Nome do Professor" email@escola.br
 import { randomBytes } from "node:crypto";
+import { setDefaultResultOrder } from "node:dns";
 import { neon } from "@neondatabase/serverless";
 import { hashSecret } from "../lib/secrets.ts";
+
+// IPv4 primeiro: ver lib/db/index.ts.
+setDefaultResultOrder("ipv4first");
 
 const [name, rawEmail] = process.argv.slice(2);
 const email = rawEmail?.trim().toLowerCase();
